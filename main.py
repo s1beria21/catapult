@@ -4,6 +4,8 @@ import os
 import signal
 import time
 
+from redis_consumer import redis_consumer
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,15 +24,18 @@ def worker(sec: int):
 def consumer_start():
     """
     """
-    r = input('waiting (time_process, time_terminate): \n')
-    return r
+    val = redis_consumer('start')
+    return int(val)
 
 
-def consumer_terminate(sec: int):
+def consumer_terminate():
     """
     """
     logging.info('start terminate process')
-    time.sleep(sec)
+    while True:
+        val = redis_consumer('terminate')
+        if val == 'stop':
+            break
     logging.info('end terminate process')
     
 
@@ -41,23 +46,22 @@ def catapult():
     process, terminate = None, None
     while True:
         if process is None:
-            data_from_consumer = consumer_start()
-            time_process, time_terminate = data_from_consumer.split(',')
+            time_process = consumer_start()
             process = mp.Process(target=worker, kwargs={'sec': int(time_process)}, daemon=True)
-            terminate = mp.Process(target=consumer_terminate, kwargs={'sec': int(time_terminate)}, daemon=True)
+            terminate = mp.Process(target=consumer_terminate, daemon=True)
             process.start()
             terminate.start()
         else:
             while True:
                 if not terminate.is_alive():
-                    logging.info('Starting terminate...')
+                    logging.info('STOP VIA TERMINATE')
                     terminate.join()
                     os.kill(process.pid, signal.SIGTERM)    
                     process.join()
                     process, terminate = None, None
                     break
                 elif not process.is_alive():
-                    logging.info('Process ending...')
+                    logging.info('STOP VIA END WORKER')
                     process.join()
                     os.kill(terminate.pid, signal.SIGTERM)
                     terminate.join()  

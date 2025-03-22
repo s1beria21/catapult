@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+    redis-catapulta:
+      container_name: redis-catapulta
+      image: redis:7
+      command: /bin/sh -c "redis-server"
+      ports:
+        - 6369:6379
