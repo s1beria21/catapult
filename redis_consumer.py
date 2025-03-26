@@ -18,3 +18,12 @@ def redis_consumer(topic: str):
     for msg in p.listen():
         if msg['type'] == 'message':
             return msg['data'].decode()
+
+
+def redis_consumer_check_message(topic: str):
+    """
+    """
+    redis = Redis(host=host, port=port, db=db)
+    p = redis.pubsub()
+    p.subscribe(topic)
+    return p
